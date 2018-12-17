@@ -263,12 +263,14 @@ internal class GradleKotlinCompilerWork @Inject constructor(
         // in-process compiler should always be run in a different thread
         // to avoid leaking thread locals from compiler (see KT-28037)
         val threadPool = Executors.newSingleThreadExecutor()
+        val bufferingMessageCollector = GradleBufferingMessageCollector()
         try {
             val future = threadPool.submit(Callable {
-                compileInProcessImpl(messageCollector)
+                compileInProcessImpl(bufferingMessageCollector)
             })
             return future.get()
         } finally {
+            bufferingMessageCollector.flush(messageCollector)
             threadPool.shutdown()
         }
     }
